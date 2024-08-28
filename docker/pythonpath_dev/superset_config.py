@@ -20,8 +20,11 @@
 # development environments. Also note that superset_config_docker.py is imported
 # as a final step as a means to override "defaults" configured here
 #
+from flask import Flask
+from flask import session
 import logging
 import os
+from datetime import datetime, timedelta
 
 from celery.schedules import crontab
 from flask_caching.backends.filesystemcache import FileSystemCache
@@ -113,3 +116,18 @@ try:
     )
 except ImportError:
     logger.info("Using default Docker config...")
+
+
+def make_session_permanent():
+    '''
+    Enable maxAge for the cookie 'session'
+    '''
+    session.permanent = True
+
+
+# Set up max age of session to 24 hours
+PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+
+
+def FLASK_APP_MUTATOR(app: Flask) -> None:
+    app.before_request_funcs.setdefault(None, []).append(make_session_permanent)
